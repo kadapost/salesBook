@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title></title>
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+<style>
+html, body { height: 100%; }
+section { min-height: 100%; }
+</style>
+</head>
+<body>
+<!-- Home -->
+<section id="home" class="container text-center py-3" style="max-width: 400px;margin: auto;">
+  <h3><span class="border-bottom">Sales Book</span></h3>
+  <p>
+    <button class="btn btn-success btn-block py-3" onclick="showSec('allSales')">View All Sales</button>
+  </p>
+  <p>
+    <button class="btn btn-success btn-block py-3" onclick="showSec('addNew')">Add New Sale</button>
+  </p>
+  <p>
+    <button class="btn btn-success btn-block py-3" onclick="showSec('addItem')">Set Item Pricing</button>
+  </p>
+  <p>
+    <button class="btn btn-success btn-block py-3" onclick="showSec('allPrices')">View All Prices</button>
+  </p>
+  <p>&copy; 2021. Designed and Developed by <span class="text-info">Imonitie Aregbeyen</span></p>
+  
+  <p class="lead"><span class="border-bottom">Let's do business today</span></p>
+  <p>WhatsApp <a href="https://wa.me/2349061680055">09061680055</a></p>
+  <p>Phone <a href="tel:+2349059620345">09059620345</a></p>
+</section>
+
+<!-- Add a New Sale -->
+<section id="addNew" class="container py-3" style="max-width: 400px;margin: auto;">
+  <h3>
+    <span>Add a New Sale</span>
+    <button class="btn btn-outline-primary" onclick="showSec('allSales')">Sales</button>
+    <button class="btn btn-outline-primary" onclick="showSec('home')">&#8962;</button>
+  </h3>
+  <p>
+    <span>Item</span> <span id="unitPrice" class="small text-info float-right"></span>
+    <input list="items" id="item" class="form-control" oninput="getPrice()">
+    <datalist id="items">
+      <option value="lamination">
+      <option value="photocopy">
+      <option value="printing">
+      <option value="typing">
+    </datalist>
+  </p>
+  <p>
+    <span>Quantity</span>
+    <input type="number" id="qtt" class="form-control" min="1" step="1" max="1000000" oninput="getPrice()">
+  </p>
+  <p>
+    <span>Price</span>
+    <input type="number" id="price" class="form-control">
+  </p>
+  <p>
+    <span>Date</span>
+    <input type="date" id="date" class="form-control" value="">
+  </p>
+  <details class="small">
+    <summary>Add Customer Information</summary>
+    <p>
+      <input id="customer_name" class="form-control" placeholder="Customer Name">
+    </p>
+    <p>
+      <input type="tel" id="customer_phone" class="form-control" placeholder="Customer Phone">
+    </p>
+  </details>
+  <p class="text-right">
+    <button class="btn btn-success px-5" onclick="saveItem();showSec('allSales')">SAVE</button>
+  </p>
+</section>
+<!-- All Sales -->
+<section id="allSales" class="container py-3">
+  <h3>
+    <span>Sales</span>
+    <button class="btn btn-outline-success" onclick="showSec('addNew')">&plus;</button>
+    <button class="btn btn-outline-primary" onclick="showSec('home')">&#8962;</button>
+    <input type="date" id="queryDate" class="form-control w-50 d-inline-block" oninput="searchSales(this.value)">
+  </h3>
+  <div class="table-responsive">
+    <table class="table" id="salesTbl">
+      <tr>
+        <th>Item</th>
+        <th>Quantity</th>
+        <th>Price <span class="text-success">&#8358;</span></th>
+        <th>Date</th>
+        <th></th>
+      </tr>
+    </table>
+  </div>
+</section>
+<!-- Set Price -->
+<section id="addItem" class="container py-3">
+  <h3>
+    <span>Set Item Price</span>
+    <button class="btn btn-outline-success" onclick="showSec('allPrices')">Pricing</button>
+    <button class="btn btn-outline-primary" onclick="showSec('home')">&#8962;</button>
+  </h3>
+  <p>
+    <span>Item Description</span>
+    <input id="setDescription" class="form-control">
+  </p>
+  <p>
+    <span>Item Price</span> <span class="text-success">&#8358;</span>
+    <input type="number" id="setPrice" class="form-control">
+  </p>
+  <p>
+    <button class="btn btn-success px-5" onclick="setItem();showSec('allPrices')">Save</button>
+  </p>
+</section>
+<!-- All Prices -->
+<section id="allPrices" class="container py-3">
+  <h3>
+    <span>Prices</span>
+    <button class="btn btn-outline-success" onclick="showSec('addItem')">&plus;</button>
+    <button class="btn btn-outline-primary" onclick="showSec('home')">&#8962;</button>
+  </h3>
+  <div class="table-responsive">
+    <table class="table" id="pricesTbl">
+      <tr>
+        <th>Item Description</th>
+        <th>Price Tag <span class="text-success">&#8358;</span></th>
+        <th></th>
+      </tr>
+    </table>
+  </div>
+</section>
+<script>
+let salesdb = {
+  sales: [],
+  items: []
+}
+if (localStorage.salesdb) {
+  salesdb = JSON.parse(localStorage.salesdb)
+}
+document.getElementById('date').valueAsDate = new Date
+allSales()
+allPrices()
+listItems()
+showSec()
+
+function showSec(id = 'home') {
+  let section = document.getElementsByTagName('section')
+  for (sec of section) {
+    sec.style.display = 'none'
+  }
+  document.getElementById(id).style.display = 'block'
+}
+
+function saveItem() {
+  let item = document.getElementById('item').value
+  let qtt = document.getElementById('qtt').value
+  let price = document.getElementById('price').value
+  let date = document.getElementById('date').valueAsDate
+  let dateStr = date.toDateString()
+  let cus_name = document.getElementById('customer_name').value
+  let cus_phone = document.getElementById('customer_phone').value
+  salesdb.sales.push({
+    item: item,
+    qtt: qtt,
+    price: price,
+    date: dateStr,
+    customer_name: cus_name,
+    customer_phone: cus_phone
+  })
+  localStorage.setItem('salesdb', JSON.stringify(salesdb))
+  allSales()
+}
+
+function setItem() {
+  let description = document.getElementById('setDescription').value
+  let price = document.getElementById('setPrice').value
+  salesdb.items.push({
+    description: description,
+    price: price
+  })
+  localStorage.setItem('salesdb', JSON.stringify(salesdb))
+  allPrices()
+  listItems()
+  return
+}
+
+function getPrice() {
+  let item = document.getElementById('item').value
+  let qtt = document.getElementById('qtt').value
+  if (item == undefined || qtt == undefined) {
+    return
+  }
+  let i = salesdb.items.findIndex(getIndex)
+  function getIndex(value, index, array) {
+    return value.description == item
+  }
+  let price = salesdb.items[i].price * qtt
+  document.getElementById('price').value = price
+  document.getElementById('unitPrice').innerHTML = 'unit price: ' + salesdb.items[i].price
+  return
+}
+
+function listItems(items = salesdb.items.reverse()) {
+  let dl = document.getElementById('items')
+  dl.innerHTML = ''
+  for (i in items) {
+    let op = document.createElement('option')
+    op.setAttribute('value', items[i].description)
+    dl.appendChild(op)
+  }
+  return
+}
+
+function allSales(sales = salesdb.sales.reverse()) {
+  let tbl = document.getElementById('salesTbl')
+  tbl.innerHTML = ''
+  let tr = document.createElement('tr')
+  let th = document.createElement('th')
+  let th2 = document.createElement('th')
+  let th3 = document.createElement('th')
+  let th4 = document.createElement('th')
+  th.innerHTML = 'Item'
+  th2.innerHTML = 'Quantity'
+  th3.innerHTML = 'Price'
+  th4.innerHTML = ''
+  tr.appendChild(th)
+  tr.appendChild(th2)
+  tr.appendChild(th3)
+  tr.appendChild(th4)
+  tbl.appendChild(tr)
+  totalSales = 0;
+  // sales = sales.reverse()
+  for (i in sales) {
+    let tr = document.createElement('tr')
+    let td = document.createElement('td')
+    let td2 = document.createElement('td')
+    let td3 = document.createElement('td')
+    let td4 = document.createElement('td')
+    let btnDe = document.createElement('button')
+    btnDe.innerHTML = '&times;'
+    btnDe.setAttribute('onclick', 'removeSale(' + i + ')')
+    btnDe.setAttribute('class', 'btn btn-outline-danger')
+    
+    totalSales += parseInt(sales[i].price)
+
+    td.innerHTML = sales[i].item + '<br><a href="tel:' + sales[i].customer_phone + '">' + sales[i].customer_name + '</a>'
+    td2.innerHTML = sales[i].qtt
+    td3.innerHTML = sales[i].price
+    td4.appendChild(btnDe)
+
+    tr.appendChild(td)
+    tr.appendChild(td2)
+    tr.appendChild(td3)
+    tr.appendChild(td4)
+    tbl.appendChild(tr)
+  }
+  let tr0 = document.createElement('tr')
+  let td = document.createElement('td')
+  let td2 = document.createElement('td')
+  let td3 = document.createElement('td')
+  let td4 = document.createElement('td')
+  td3.innerHTML = totalSales
+  td3.setAttribute('class', 'border-bottom font-weight-bold')
+  tr0.appendChild(td)
+  tr0.appendChild(td2)
+  tr0.appendChild(td3)
+  tr0.appendChild(td4)
+  tbl.appendChild(tr0)
+}
+
+function allPrices(items = salesdb.items.reverse()) {
+  let tbl = document.getElementById('pricesTbl')
+  tbl.innerHTML = ''
+  let tr = document.createElement('tr')
+  let th = document.createElement('th')
+  let th2 = document.createElement('th')
+  let th3 = document.createElement('th')
+  th.innerHTML = 'Item Description'
+  th2.innerHTML = 'Price Tag <span class="text-success">&#8358;</span>'
+  th3.innerHTML = ''
+  tr.appendChild(th)
+  tr.appendChild(th2)
+  tr.appendChild(th3)
+  tbl.appendChild(tr)
+  for (i in items) {
+    let tr = document.createElement('tr')
+    let td = document.createElement('td')
+    let td2 = document.createElement('td')
+    let td3 = document.createElement('td')
+    let btnDe = document.createElement('button')
+    btnDe.innerHTML = '&times;'
+    btnDe.setAttribute('onclick', 'removePrice(' + i + ')')
+    btnDe.setAttribute('class', 'btn btn-outline-danger')
+    
+    td.innerHTML = items[i].description
+    td2.innerHTML = items[i].price
+    td3.appendChild(btnDe)
+
+    tr.appendChild(td)
+    tr.appendChild(td2)
+    tr.appendChild(td3)
+    tbl.appendChild(tr)
+  }
+}
+
+function removeSale(i) {
+  salesdb.sales.splice(i, 1)
+  localStorage.setItem('salesdb', JSON.stringify(salesdb))
+  allSales()
+}
+function removePrice(i) {
+  salesdb.items.splice(i, 1)
+  localStorage.setItem('salesdb', JSON.stringify(salesdb))
+  allPrices()
+}
+
+function searchSales(q) {
+  let date = new Date(q)
+  let dateStr = date.toDateString()
+  let salesArr = salesdb.sales.filter(filterSales)
+  function filterSales(value, index, array) {
+    return value.date == dateStr
+  }
+  allSales(salesArr)
+}
+
+
+</script>
+</body>
+</html>
